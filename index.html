@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IA dentro do SketchUp — Live de lançamento do RenderLAB</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<meta name="description" content="Live de lançamento: a IA do RenderLAB agora roda dentro do SketchUp. Crie renders realistas sem sair do programa. Garanta sua vaga gratuita.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Michroma&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#000000;--shell:#0c0c0e;
+  --blue:#0030ff;--blue-t:#5aa9ff;--blue-glow:rgba(0,48,255,0.16);
+  --neon:#d4f81a;--neon-d:#c2e418;--live:#ff3b3b;
+  --text:#ededf0;--text2:#c2c2cc;--text3:#83838f;
+  --border:rgba(255,255,255,0.09);--border-h:rgba(0,48,255,0.5);
+  --glass:rgba(255,255,255,0.035);--glass-blur:blur(18px);
+  --radius:18px;--radius-sm:13px;
+}
+html{scroll-behavior:smooth;background:#04060e}
+body{background:transparent;position:relative;z-index:0;color:var(--text);font-family:'Space Grotesk',sans-serif;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* FUNDO ANIMADO GLOBAL — campo de fluxo (flow field) em canvas */
+.bg-fx{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;background:#05070f}
+.bgfx-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.40}
+.bg-fx::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 105% 60% at 50% -6%,rgba(0,48,255,.10),transparent 58%),radial-gradient(ellipse 75% 55% at 82% 102%,rgba(90,169,255,.05),transparent 60%)}
+.ctn{max-width:1180px;margin:0 auto;padding:0 28px}
+a{color:inherit;text-decoration:none}
+img,video{display:block;max-width:100%}
+.tag{display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--blue-t)}
+.tag .dot{width:6px;height:6px;border-radius:50%;background:var(--neon);box-shadow:0 0 10px var(--neon);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.live-badge{display:inline-flex;align-items:center;gap:9px;background:rgba(255,59,59,.1);border:1px solid rgba(255,59,59,.35);border-radius:9999px;padding:6px 14px 6px 11px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#ff6b6b}
+.live-badge .ld{width:8px;height:8px;border-radius:50%;background:var(--live);box-shadow:0 0 0 0 rgba(255,59,59,.6);animation:livepulse 1.6s infinite}
+@keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,59,59,.55)}70%{box-shadow:0 0 0 8px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
+
+nav{position:sticky;top:0;z-index:50;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.nav-in{max-width:1180px;margin:0 auto;padding:12px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo img{height:27px;width:auto}
+.logo-lockup{display:flex;align-items:center;gap:13px}
+.lk-plus{color:var(--text3);font-size:17px;font-weight:300;line-height:1}
+.logo-sk{height:18px;width:auto;opacity:.9}
+@media(max-width:560px){.logo-lockup{gap:8px}.logo img{height:22px}.logo-sk{height:14px}.lk-plus{font-size:14px}}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-ev{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.btn-neon{display:inline-flex;align-items:center;gap:7px;background:var(--neon);color:#000;font-weight:600;font-size:14px;padding:11px 20px;border-radius:9999px;border:none;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.btn-neon:hover{transform:translateY(-1px);box-shadow:0 8px 26px rgba(212,248,26,.28)}
+.nav-cta{padding:9px 17px;font-size:13px}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);color:var(--text);font-weight:600;font-size:15px;padding:13px 24px;border-radius:9999px;background:transparent;cursor:pointer;transition:border-color .2s,background .2s}
+.btn-ghost:hover{border-color:var(--blue);background:rgba(0,48,255,.08)}
+
+.orb{position:absolute;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0}
+.grid-bg{position:absolute;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.018) 1px,transparent 1px);background-size:54px 54px;mask-image:radial-gradient(ellipse 75% 60% at 50% 30%,#000 10%,transparent 90%)}
+
+/* HERO — galeria imersiva + headline sobreposta */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
+.hero-content .inner{min-width:0}
+.hero-gallery{position:absolute;inset:-10% -6%;z-index:1;display:flex;gap:18px;transform:rotate(-4deg) scale(1.16);opacity:.9;filter:saturate(1.06)}
+.hg-col{flex:1;display:flex;flex-direction:column;gap:18px;animation:hgscroll var(--dur,34s) linear infinite;will-change:transform}
+.hg-col.rev{animation-direction:reverse}
+@keyframes hgscroll{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+.hg-t{position:relative;flex-shrink:0;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.09);box-shadow:0 16px 44px rgba(0,0,0,.5);aspect-ratio:4/3;background:#0b0b0e}
+.hg-t img,.hg-t video{width:100%;height:100%;object-fit:cover;display:block}
+.hg-t::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,5,20,.4))}
+.hero-scrim{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse 70% 80% at 50% 50%,rgba(3,4,11,.94) 0%,rgba(3,4,11,.8) 40%,rgba(3,4,11,.5) 72%,rgba(3,4,11,.64) 100%),linear-gradient(180deg,rgba(0,0,0,.55) 0%,transparent 22%,transparent 68%,rgba(2,3,9,.82) 100%)}
+.hero-content{position:relative;z-index:3;width:100%;padding:72px 28px 78px;text-align:center}
+.hero-content .inner{max-width:790px;margin:0 auto}
+.hero-content .eyebrow{justify-content:center}
+.hero-content .hero-sub{margin-left:auto;margin-right:auto}
+.hero-content .hero-meta{justify-content:center}
+.hero-content .cd{justify-content:center}
+.hero-content .hero-ctas{justify-content:center}
+.eyebrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.eyebrow .sub{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3)}
+h1{font-size:clamp(28px,3.5vw,45px);font-weight:400;line-height:1.06;letter-spacing:-.025em;margin-bottom:20px}
+h1 .hl{font-weight:600;font-style:italic;background:linear-gradient(100deg,#9fc6ff,var(--blue-t) 55%,var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;padding-right:.12em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.hero-sub{font-size:clamp(15px,1.7vw,18px);color:var(--text2);max-width:540px;margin-bottom:24px}
+.hero-sub b{color:var(--text);font-weight:600}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px 22px;margin-bottom:6px}
+.hero-meta .m{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--text2)}
+.hero-meta svg{width:17px;height:17px;stroke:var(--blue-t);fill:none;flex-shrink:0}
+.cd{display:flex;gap:10px;margin:20px 0 0}
+.cd .u{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:9px 0;min-width:62px;text-align:center}
+.cd .u b{display:block;font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:#fff;line-height:1}
+.cd .u span{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--text3);margin-top:5px;display:block}
+
+.form-card{position:relative;z-index:2;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid var(--border);border-radius:var(--radius);padding:28px 28px 26px;backdrop-filter:var(--glass-blur);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.fc-tag{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--neon);margin-bottom:6px}
+.fc-h{font-size:21px;font-weight:600;letter-spacing:-.01em;margin-bottom:4px}
+.fc-sub{font-size:13.5px;color:var(--text3);margin-bottom:18px}
+.field{margin-bottom:11px}
+.field label{display:block;font-size:11px;color:var(--text3);margin-bottom:6px;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase}
+.field input{width:100%;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:11px;padding:13px 15px;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:15px;outline:none;transition:border-color .2s,box-shadow .2s}
+.field input::placeholder{color:#5c5c66}
+.field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-glow)}
+.form-card .btn-neon{width:100%;justify-content:center;font-size:16px;padding:15px;margin-top:6px}
+.fc-note{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text3);margin-top:12px;justify-content:center}
+.fc-note svg{width:14px;height:14px;stroke:var(--text3);fill:none}
+.fc-done{display:none;text-align:center;padding:18px 4px}.fc-done.on{display:block}
+.fc-done .ic{width:54px;height:54px;border-radius:50%;background:rgba(212,248,26,.12);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.fc-done .ic svg{width:26px;height:26px;stroke:var(--neon);fill:none}
+.fc-done h4{font-size:19px;margin-bottom:6px}.fc-done p{font-size:14px;color:var(--text2)}
+
+/* RENDER MARQUEE (proof of output) */
+.gallery{padding:18px 0 0;position:relative;z-index:2}
+.sizzle-frame{max-width:1000px;margin:0 auto;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.6)}
+.sizzle-frame video{width:100%;display:block;aspect-ratio:16/9;object-fit:cover;background:#000}
+.gallery-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.gcard{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border);aspect-ratio:4/3}
+.gcard img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.gcard:hover img{transform:scale(1.06)}
+.gcard .glab{position:absolute;left:9px;bottom:9px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:5px;backdrop-filter:blur(4px)}
+
+.proof{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--shell);margin-top:42px}
+.proof-in{display:flex;flex-wrap:wrap;gap:16px 36px;align-items:center;justify-content:center;padding:20px 28px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);letter-spacing:.04em}
+.proof-in b{color:#fff}.proof-in .blue{color:var(--blue-t)}
+
+.sec{padding:80px 0;position:relative}
+.sec-head{text-align:center;max-width:700px;margin:0 auto 46px}
+.sec-head .tag,.sec-head .live-badge{margin-bottom:16px}
+.sec-title{font-size:clamp(26px,3.3vw,40px);font-weight:400;line-height:1.1;letter-spacing:-.025em}
+.sec-title .hl{color:var(--blue-t);font-style:italic;font-weight:500}
+.sec-desc{font-size:16px;color:var(--text2);margin-top:14px}
+
+/* O QUE É (split) */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
+.split.rev .txt{order:2}
+.split .tag{margin-bottom:14px}
+.split h2{font-size:clamp(25px,3vw,36px);font-weight:400;line-height:1.12;letter-spacing:-.02em;margin-bottom:16px}
+.split h2 .hl{color:var(--blue-t);font-style:italic;font-weight:500}
+.split p{font-size:16px;color:var(--text2);margin-bottom:14px}
+.split p b{color:var(--text);font-weight:600}
+.split .mini{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.split .chip{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue-t);background:var(--blue-glow);border:1px solid rgba(0,48,255,.25);padding:6px 12px;border-radius:8px}
+.split .chip-hot{color:#000;background:var(--neon);border-color:var(--neon);font-weight:700;box-shadow:0 0 18px rgba(212,248,26,.35)}
+.ba{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);box-shadow:0 30px 70px rgba(0,0,0,.5)}
+.ba-imgs{display:grid;grid-template-columns:1fr 1fr}
+.ba-imgs .s{position:relative;aspect-ratio:1/1}
+.ba-imgs img{width:100%;height:100%;object-fit:cover}
+.ba-imgs .lab{position:absolute;top:10px;left:10px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:4px 9px;border-radius:5px}
+.ba-imgs .s.a .lab{background:rgba(0,0,0,.6);color:#bbb}
+.ba-imgs .s.b .lab{background:var(--blue);color:#fff}
+.ba-imgs .s.a::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,.25)}
+
+/* INTEGRAÇÃO (demo) */
+.demo-window{max-width:1000px;margin:0 auto;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:#0a0a0c;box-shadow:0 40px 100px rgba(0,0,0,.6)}
+.demo-bar{display:flex;align-items:center;gap:8px;padding:13px 18px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02)}
+.demo-bar .d{width:11px;height:11px;border-radius:50%}
+.demo-bar .d.r{background:#ff5f56}.demo-bar .d.y{background:#ffbd2e}.demo-bar .d.g{background:#27c93f}
+.demo-bar .u{flex:1;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
+.demo-window video{width:100%;display:block;aspect-ratio:16/9;object-fit:cover;background:#08080a}
+.demo-cap{text-align:center;margin-top:16px;font-size:13.5px;color:var(--text3)}
+
+/* FEATURES */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feat{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px 16px 22px;transition:border-color .25s,transform .25s,background .25s}
+.feat:hover{border-color:var(--border-h);transform:translateY(-3px);background:rgba(0,48,255,.05)}
+.feat-media{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;margin-bottom:16px;background:#0b0b0e;border:1px solid var(--border)}
+.feat-media video,.feat-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.feat-tag{position:absolute;top:9px;left:9px;z-index:2;font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#000;background:var(--neon);padding:3px 8px;border-radius:5px}
+.feat-tag.img{background:var(--blue-t);color:#00102e}
+.feat h3{font-size:17px;font-weight:600;margin:0 4px 7px;letter-spacing:-.01em}
+.feat p{font-size:14px;color:var(--text3);line-height:1.55;margin:0 4px}
+
+/* PERSONAS */
+.persona-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.persona{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--glass);transition:border-color .25s,transform .25s}
+.persona:hover{border-color:var(--border-h);transform:translateY(-3px)}
+.persona .pimg{position:relative;aspect-ratio:4/3;overflow:hidden}
+.persona .pimg img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.persona:hover .pimg img{transform:scale(1.06)}
+.persona .pimg::after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(8,8,10,.85))}
+.persona .pk{position:absolute;left:12px;bottom:10px;z-index:2;font-size:16px;font-weight:600}
+.persona .pb{padding:14px 16px 18px;font-size:14px;color:var(--text2);line-height:1.5}
+
+/* WHY */
+.why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.why{text-align:center;padding:26px 18px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--glass)}
+.why .n{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue-t);letter-spacing:.1em;margin-bottom:12px}
+.why h4{font-size:16px;font-weight:600;margin-bottom:7px}.why p{font-size:13.5px;color:var(--text3);line-height:1.5}
+
+/* HOST */
+.host{display:grid;grid-template-columns:300px 1fr;gap:40px;align-items:center;background:var(--shell);border:1px solid var(--border);border-radius:var(--radius);padding:34px 38px;max-width:920px;margin:0 auto}
+.host-photo{border-radius:14px;overflow:hidden;border:1px solid var(--border);aspect-ratio:424/472}
+.host-photo img{width:100%;height:100%;object-fit:cover}
+.host .k{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue-t);margin-bottom:8px}
+.host h3{font-size:27px;font-weight:600;margin-bottom:4px;letter-spacing:-.01em}
+.host .role{font-size:15px;color:var(--text3);font-style:italic;margin-bottom:14px}
+.host p{font-size:14.5px;color:var(--text2);margin-bottom:12px;line-height:1.6}
+.host p b{color:#fff}
+.host-stats{display:flex;gap:26px;margin-top:18px;flex-wrap:wrap}
+.host-stat .n{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--blue-t)}
+.host-stat .d{font-size:12px;color:var(--text3);letter-spacing:.04em}
+
+/* FAQ */
+.faq-list{max-width:760px;margin:0 auto}
+.faq-i{border-bottom:1px solid var(--border)}
+.faq-q{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 4px;cursor:pointer;font-size:16.5px;font-weight:500}
+.faq-q .arr{color:var(--blue-t);transition:transform .25s;flex-shrink:0}
+.faq-i.open .faq-q .arr{transform:rotate(180deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease;color:var(--text2);font-size:15px}
+.faq-i.open .faq-a{max-height:280px}
+.faq-a p{padding:0 4px 20px}
+
+/* FINAL */
+.final{padding:88px 0 70px;text-align:center;overflow:hidden;position:relative}
+.final .orb1{width:560px;height:560px;background:rgba(0,48,255,.18);top:-160px;left:50%;transform:translateX(-50%)}
+.final-card{position:relative;z-index:2;max-width:780px;margin:0 auto;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.01));border:1px solid var(--border);border-radius:24px;padding:50px 44px;backdrop-filter:var(--glass-blur)}
+.final h2{font-size:clamp(27px,3.4vw,42px);font-weight:400;line-height:1.08;letter-spacing:-.025em;margin-bottom:16px}
+.final h2 .hl{color:var(--blue-t);font-style:italic;font-weight:500}
+.final p{font-size:16px;color:var(--text2);max-width:540px;margin:0 auto 28px}
+.final .btn-neon{font-size:17px;padding:16px 34px}
+.final .mini{margin-top:16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);letter-spacing:.05em}
+
+/* SUPPORT */
+.support{position:relative;z-index:2;max-width:780px;margin:24px auto 0;display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;border:1px solid var(--border);border-radius:16px;padding:20px 28px;background:var(--glass)}
+.support .st{font-size:15px;color:var(--text2)}.support .st b{color:#fff}
+.support a{display:inline-flex;align-items:center;gap:8px}
+.support svg{width:18px;height:18px}
+
+footer{border-top:1px solid var(--border);padding:30px 0;text-align:center;color:var(--text3);font-size:13px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+
+/* placeholder de vídeo (sizzle) */
+.vid-ph-screen{position:relative;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background-color:#08080a;background-image:radial-gradient(ellipse at 50% 42%,rgba(0,48,255,.14),transparent 68%),linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:auto,42px 42px,42px 42px}
+.play{width:72px;height:72px;border-radius:50%;background:var(--neon);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 10px rgba(212,248,26,.12),0 16px 44px rgba(212,248,26,.28)}
+.play svg{width:28px;height:28px;margin-left:5px;fill:#000}
+.ph-label{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);text-align:center;padding:0 16px}
+.ph-label b{color:var(--blue-t)}
+/* tabs de funcionalidades */
+.tabs-nav{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:34px}
+.tab-btn{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:var(--text2);background:var(--glass);border:1px solid var(--border);border-radius:9999px;padding:11px 20px;cursor:pointer;transition:all .2s}
+.tab-btn:hover{border-color:var(--border-h);color:var(--text)}
+.tab-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 8px 26px rgba(0,48,255,.3)}
+.swipe-hint{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin:0 0 22px;display:flex;align-items:center;justify-content:center;gap:11px}
+.swipe-hint span{color:var(--blue-t);font-size:15px;animation:swarrow 1.7s ease-in-out infinite}
+.swipe-hint span:last-child{animation-delay:.25s}
+@keyframes swarrow{0%,100%{opacity:.35}50%{opacity:1}}
+.tab-stage{cursor:grab;user-select:none;-webkit-user-select:none}
+.tab-stage:active{cursor:grabbing}
+.cobrand{position:absolute;top:14px;left:16px;z-index:4;display:flex;align-items:center;gap:9px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.13);border-radius:9999px;padding:7px 13px;backdrop-filter:blur(6px);pointer-events:none}
+.cobrand img{height:14px;width:auto;display:block}.cobrand .cb-sk{height:12px;opacity:.95}
+.cobrand span{color:var(--text3);font-size:13px;font-weight:300}
+.tab-stage{display:grid;grid-template-columns:1.55fr 1fr;gap:34px;align-items:center}
+.tab-info .ti-num{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--blue-t);letter-spacing:.1em;margin-bottom:10px}
+.tab-info h3{font-size:26px;font-weight:600;letter-spacing:-.01em;margin-bottom:12px;line-height:1.18}
+.tab-info p{font-size:16px;color:var(--text2);line-height:1.65}
+.tab-info p b{color:var(--text)}
+
+/* hero video + ctas */
+.hero-video{position:relative;z-index:2;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.6);cursor:pointer}
+.hero-video video{width:100%;display:block;aspect-ratio:16/9;object-fit:cover;background:#000}
+.hv-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;background:linear-gradient(180deg,rgba(0,2,8,.66) 0%,rgba(0,2,8,.62) 45%,rgba(0,2,8,.82) 100%);transition:opacity .3s;text-align:center;padding:20px}
+.hv-overlay.hidden{opacity:0;pointer-events:none}
+.hv-play{width:72px;height:72px;border-radius:50%;background:var(--neon);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 12px rgba(212,248,26,.14),0 16px 44px rgba(212,248,26,.3);transition:transform .2s}
+.hero-video:hover .hv-play{transform:scale(1.08)}
+.hv-play svg{width:30px;height:30px;margin-left:5px;fill:#000}
+.hv-text{font-size:17px;font-weight:500;color:#fff;max-width:330px;line-height:1.35;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.hv-text b{color:var(--neon)}
+.hv-sub{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--neon);background:rgba(0,0,0,.45);border:1px solid rgba(212,248,26,.3);padding:6px 13px;border-radius:9999px;backdrop-filter:blur(4px)}
+.hero-ctas{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:26px}
+.hero-btn{font-size:16px;padding:15px 28px}
+.hero-note{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);letter-spacing:.04em}
+/* topics (6 tópicos) */
+.topic-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.topic{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius-sm);padding:24px;transition:border-color .25s,transform .25s,background .25s}
+.topic:hover{border-color:var(--border-h);transform:translateY(-3px);background:rgba(0,48,255,.05)}
+.topic-media{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;margin-bottom:18px;border:1px solid var(--border);background:#0b0b0e}
+.topic-media img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
+.topic:hover .topic-media img{transform:scale(1.05)}
+.topic-media .tlab{position:absolute;left:9px;top:9px;z-index:2;font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#000;background:var(--neon);padding:3px 8px;border-radius:5px}
+.topic .tn{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--blue-t);letter-spacing:.1em;margin-bottom:12px}
+.topic h3{font-size:17px;font-weight:600;margin-bottom:8px;letter-spacing:-.01em}
+.topic p{font-size:14px;color:var(--text3);line-height:1.55}
+/* modal de inscrição */
+.modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:24px}
+.modal.open{display:flex}
+.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px)}
+.modal-card{position:relative;z-index:2;width:100%;max-width:440px;background:linear-gradient(180deg,#15151a,#0c0c0e);border:1px solid var(--border);border-radius:var(--radius);padding:30px 30px 28px;box-shadow:0 40px 120px rgba(0,0,0,.7);animation:modalin .25s ease}
+@keyframes modalin{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+.modal-x{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--text3);font-size:26px;line-height:1;cursor:pointer}
+.modal-x:hover{color:#fff}
+.modal-card .btn-neon{width:100%;justify-content:center;font-size:16px;padding:15px;margin-top:6px}
+
+/* vídeo vertical (O que é o RenderLAB) */
+.vstage{display:flex;justify-content:center;position:relative}
+.vstage::before{content:'';position:absolute;width:340px;height:340px;border-radius:50%;background:rgba(0,48,255,.22);filter:blur(90px);top:50%;left:50%;transform:translate(-50%,-50%);z-index:0}
+.vvid{position:relative;z-index:1;width:300px;max-width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:24px;border:1px solid var(--border);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+
+@media(max-width:900px){
+  .hero-content .inner{max-width:100%}
+  .hero-gallery{opacity:.6}
+  .hero-scrim{background:radial-gradient(ellipse 92% 72% at 50% 46%,rgba(3,4,11,.93) 0%,rgba(3,4,11,.82) 54%,rgba(3,4,11,.72) 100%),linear-gradient(180deg,rgba(0,0,0,.5),transparent 28%,transparent 72%,rgba(2,3,9,.86))}
+  .hero-grid,.split,.tab-stage{grid-template-columns:1fr;gap:34px}
+  .topic-grid{grid-template-columns:1fr 1fr}
+  .split.rev .txt{order:0}
+  .feat-grid,.persona-grid{grid-template-columns:1fr 1fr}
+  .why-grid{grid-template-columns:1fr 1fr}
+  .gallery-row{grid-template-columns:1fr 1fr}
+  .host{grid-template-columns:1fr;text-align:center}.host-photo{max-width:260px;margin:0 auto}.host-stats{justify-content:center}
+}
+@media(max-width:560px){
+  .ctn{padding:0 18px}.nav-ev{display:none}
+  .feat-grid,.persona-grid,.why-grid,.topic-grid{grid-template-columns:1fr}
+  .sec{padding:52px 0}
+  .hero-content{padding:48px 18px 56px}
+  h1{font-size:clamp(25px,7.3vw,34px);line-height:1.12}
+  .hero-sub{font-size:15px;line-height:1.55}
+  .hero-gallery{inset:-6% -12%;transform:rotate(-4deg) scale(1.34)}
+  .hg-col:nth-child(n+4){display:none}
+  .cd{gap:7px}.cd .u{flex:1;min-width:0;padding:8px 0}.cd .u b{font-size:21px}
+  .hero-ctas{flex-direction:column;gap:12px}
+  .proof{margin-top:0}
+  .proof-in{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:18px}
+  .proof-in span:nth-child(even){display:none}
+  .proof-in span:not(:nth-child(even)){border:1px solid var(--border);border-radius:12px;padding:14px 10px;background:var(--glass);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.38;font-size:12.5px}
+  .sec-head{margin-bottom:32px}
+  .sec-desc{font-size:15px}
+  .host{padding:26px 22px}.host h3{font-size:23px}
+  .tab-info{text-align:center}.tab-info h3{font-size:22px}
+  .tabs-nav{gap:8px;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;padding:0 2px 8px;scrollbar-width:none}
+  .tabs-nav::-webkit-scrollbar{display:none}
+  .tab-btn{font-size:13px;padding:9px 15px;flex:0 0 auto}
+  .swipe-hint{font-size:10px;margin-bottom:18px}
+  .final-card{padding:38px 24px}
+  .support{flex-direction:column;gap:14px;text-align:center;padding:22px}
+  .modal-card{padding:26px 22px}
+  .nav-in{padding:11px 18px}.btn-neon.nav-cta{padding:9px 15px;font-size:12.5px}
+  .hv-text{font-size:15px}
+}
+</style>
+</head>
+<body>
+
+<!-- FUNDO ANIMADO GLOBAL -->
+<div class="bg-fx" aria-hidden="true">
+  <canvas class="bgfx-canvas" id="bgfx"></canvas>
+</div>
+
+<!-- NAV -->
+<nav><div class="nav-in">
+  <div class="logo-lockup"><a class="logo" href="#"><img src="assets/img/logo-renderlab-ai.png" alt="RenderLAB AI"></a><span class="lk-plus">+</span><img class="logo-sk" src="assets/img/sketchup-white.png" alt="SketchUp"></div>
+  <div class="nav-right">
+    <span class="nav-ev">Live de lan&ccedil;amento &bull; gratuita</span>
+    <button class="btn-neon nav-cta" onclick="openModal()">Garantir vaga</button>
+  </div>
+</div></nav>
+
+<!-- HERO -->
+<section class="hero">
+  <!-- galeria imersiva: renders + clipes das funcionalidades rolando -->
+  <div class="hero-gallery" aria-hidden="true">
+    <div class="hg-col" style="--dur:34s">
+      <div class="hg-t"><img src="assets/img/renders/hero-final.jpg" alt=""></div>
+      <div class="hg-t"><video src="assets/video/hero-clip-a.mp4" autoplay muted loop playsinline></video></div>
+      <div class="hg-t"><img src="assets/img/renders/show-comercial-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/ad-interno-depois.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/hero-final.jpg" alt=""></div>
+      <div class="hg-t"><video src="assets/video/hero-clip-a.mp4" autoplay muted loop playsinline></video></div>
+      <div class="hg-t"><img src="assets/img/renders/show-comercial-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/ad-interno-depois.jpg" alt=""></div>
+    </div>
+    <div class="hg-col rev" style="--dur:42s">
+      <div class="hg-t"><img src="assets/img/renders/show-interno-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/ad-externo-depois.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-fachada-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-pessoas-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-interno-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/ad-externo-depois.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-fachada-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-pessoas-final.jpg" alt=""></div>
+    </div>
+    <div class="hg-col" style="--dur:30s">
+      <div class="hg-t"><img src="assets/img/renders/show-moodboard-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/ad-angulo-main.jpg" alt=""></div>
+      <div class="hg-t"><video src="assets/video/hero-clip-b.mp4" autoplay muted loop playsinline></video></div>
+      <div class="hg-t"><img src="assets/img/renders/show-fachada-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-moodboard-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/ad-angulo-main.jpg" alt=""></div>
+      <div class="hg-t"><video src="assets/video/hero-clip-b.mp4" autoplay muted loop playsinline></video></div>
+      <div class="hg-t"><img src="assets/img/renders/show-fachada-final.jpg" alt=""></div>
+    </div>
+    <div class="hg-col rev" style="--dur:38s">
+      <div class="hg-t"><img src="assets/img/renders/ad-externo-depois.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-comercial-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/ad-angulo-2.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-interno-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/ad-externo-depois.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-comercial-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/ad-angulo-2.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-interno-final.jpg" alt=""></div>
+    </div>
+    <div class="hg-col" style="--dur:46s">
+      <div class="hg-t"><img src="assets/img/renders/show-pessoas-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/ad-interno-depois.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-moodboard-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/hero-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-pessoas-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/ad-interno-depois.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/show-moodboard-final.jpg" alt=""></div>
+      <div class="hg-t"><img src="assets/img/renders/hero-final.jpg" alt=""></div>
+    </div>
+  </div>
+  <div class="hero-scrim"></div>
+  <div class="ctn hero-content">
+    <div class="inner">
+      <div class="eyebrow">
+        <span class="live-badge"><span class="ld"></span> Live de lan&ccedil;amento</span>
+        <span class="sub">IA dentro do SketchUp &middot; com o RenderLAB</span>
+      </div>
+      <h1>Desbloqueie a IA dentro do seu SketchUp e <span class="hl">crie renders realistas</span> sem sair da ferramenta.</h1>
+      <p class="hero-sub">Chegou a <b>IA nativa dentro do SketchUp</b>: voc&ecirc; instala o bot&atilde;o do RenderLAB e gera render fotorrealista, 360 (tour virtual) e v&iacute;deo &mdash; em segundos, sem V-Ray, sem PC gamer. Numa <b>live gratuita</b>, eu mostro como desbloquear isso no seu programa.</p>
+      <div class="hero-meta">
+        <span class="m"><svg stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> <span id="evDate">Data a confirmar</span></span>
+        <span class="m"><svg stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 20h (hor&aacute;rio de Bras&iacute;lia) &bull; ao vivo</span>
+      </div>
+      <div class="cd" id="cd">
+        <div class="u"><b id="cdD">--</b><span>dias</span></div>
+        <div class="u"><b id="cdH">--</b><span>horas</span></div>
+        <div class="u"><b id="cdM">--</b><span>min</span></div>
+        <div class="u"><b id="cdS">--</b><span>seg</span></div>
+      </div>
+      <div class="hero-ctas">
+        <button class="btn-neon hero-btn" onclick="openModal()">Garantir minha vaga &rarr;</button>
+        <span class="hero-note">Live gratuita &bull; vagas limitadas</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF -->
+<div class="proof"><div class="proof-in">
+  <span><b class="blue">2.000+</b> arquitetos e designers j&aacute; usam o RenderLAB</span><span>&bull;</span>
+  <span>Funciona <b>dentro do SketchUp</b></span><span>&bull;</span>
+  <span>Render em <b>~30 segundos</b></span><span>&bull;</span>
+  <span>Live <b>100% gratuita</b></span>
+</div></div>
+
+<!-- A INTEGRAÇÃO -->
+<section class="sec" style="padding-top:10px">
+  <div class="ctn">
+    <div class="sec-head">
+      <div class="tag"><span class="dot"></span> A novidade</div>
+      <div class="sec-title">Instale o bot&atilde;o de IA <span class="hl">nativo no seu SketchUp.</span></div>
+      <p class="sec-desc">Um plugin coloca o RenderLAB direto na barra do SketchUp. Voc&ecirc; modela e, sem exportar nada, gera render, 360 (tour virtual) e v&iacute;deo na mesma tela. Veja rodando:</p>
+    </div>
+    <div class="demo-window">
+      <div class="demo-bar"><span class="d r"></span><span class="d y"></span><span class="d g"></span><span class="u">SketchUp + RenderLAB &bull; v&iacute;deo da integra&ccedil;&atilde;o</span></div>
+      <div class="hero-video" id="heroPlayer" style="border:0;border-radius:0;box-shadow:none">
+        <video id="heroVideo" src="assets/video/sizzle-hd3.mp4" autoplay muted loop playsinline preload="auto" poster="assets/img/sizzle-poster.jpg"></video>
+        <div class="cobrand"><img class="cb-rl" src="assets/img/logo-renderlab-ai.png" alt="RenderLAB AI"><span>+</span><img class="cb-sk" src="assets/img/sketchup-white.png" alt="SketchUp"></div>
+        <div class="hv-overlay" id="hvOverlay" onclick="playHero()">
+          <div class="hv-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          <div class="hv-text">Clique e veja a revolu&ccedil;&atilde;o da <b>IA no SketchUp</b></div>
+          <div class="hv-sub">&#9654; com som &middot; em tela cheia</div>
+        </div>
+      </div>
+    </div>
+    <p class="demo-cap">V&iacute;deo da integra&ccedil;&atilde;o rodando dentro do SketchUp &mdash; com &aacute;udio. Clique pra assistir.</p>
+  </div>
+</section>
+
+<!-- FUNCIONALIDADES -->
+<section class="sec" style="padding-top:10px">
+  <div class="ctn">
+    <div class="sec-head">
+      <div class="tag"><span class="dot"></span> O que voc&ecirc; vai ver ao vivo</div>
+      <div class="sec-title">Tudo dentro do SketchUp, com a IA fazendo o <span class="hl">trabalho pesado.</span></div>
+      <p class="sec-desc">Do modelo cru ao render que fecha o cliente. Veja cada uma em a&ccedil;&atilde;o, ao vivo:</p>
+    </div>
+    <div class="topic-grid" style="margin-bottom:50px">
+      <div class="topic"><div class="topic-media"><span class="tlab">360 (tour virtual)</span><img src="assets/img/topics/t3.jpg" alt="360 (tour virtual) navegável do ambiente"></div><div class="tn">01</div><h3>Leve o cliente pra dentro</h3><p>Gera um <b>360 (tour virtual)</b> naveg&aacute;vel e novos &acirc;ngulos, com link pra mandar no WhatsApp. O cliente passeia antes de existir.</p></div>
+      <div class="topic"><div class="topic-media"><span class="tlab">Print Render</span><img src="assets/img/topics/t1.jpg" alt="Render fotorrealista no SketchUp"></div><div class="tn">02</div><h3>Render sem exportar nada</h3><p>O render fotorrealista sai direto da sua cena do SketchUp. Sem print, sem outro programa, sem retrabalho.</p></div>
+      <div class="topic"><div class="topic-media"><span class="tlab">V&iacute;deo</span><img src="assets/img/topics/t4.jpg" alt="Vídeo com movimento de câmera"></div><div class="tn">03</div><h3>V&iacute;deo que impressiona, sem editor</h3><p>A cena vira um v&iacute;deo com movimento de c&acirc;mera, pronto pra apresentar. Sem software de edi&ccedil;&atilde;o.</p></div>
+      <div class="topic"><div class="topic-media"><span class="tlab">Reflexo</span><img src="assets/img/topics/t2.jpg" alt="Reflexo realista em vidro e espelho"></div><div class="tn">04</div><h3>Realismo que o cliente acredita</h3><p>Materiais, luz e reflexo reais com um clique. O detalhe que vende o projeto &mdash; sem trabalho manual.</p></div>
+      <div class="topic"><div class="topic-media"><span class="tlab">Edi&ccedil;&atilde;o</span><img src="assets/img/topics/t5.jpg" alt="Edição por texto em português"></div><div class="tn">05</div><h3>Mudou de ideia? Ajusta na hora</h3><p>Troca cor, material e detalhes em portugu&ecirc;s, sem refazer a cena &mdash; d&aacute; at&eacute; pra ajustar na frente do cliente.</p></div>
+      <div class="topic"><div class="topic-media"><span class="tlab">Comercial</span><img src="assets/img/topics/t6.jpg" alt="Render comercial e outros tipos de projeto"></div><div class="tn">06</div><h3>Funciona pro seu tipo de projeto</h3><p>Externo, interno, comercial, planta humanizada e mais. A IA d&aacute; conta do que voc&ecirc; entrega no dia a dia.</p></div>
+    </div>
+    <div class="tag" style="justify-content:center;margin:0 auto 24px;width:fit-content"><span class="dot"></span> Veja cada uma em a&ccedil;&atilde;o</div>
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-i="0">360 (tour virtual)</button>
+      <button class="tab-btn" data-i="1">Print Render</button>
+      <button class="tab-btn" data-i="2">Anima&ccedil;&atilde;o</button>
+      <button class="tab-btn" data-i="3">Reflexo</button>
+      <button class="tab-btn" data-i="4">Edi&ccedil;&atilde;o por texto</button>
+      <button class="tab-btn" data-i="5">Comercial</button>
+    </div>
+    <p class="swipe-hint"><span>&larr;</span> arraste ou use os bot&otilde;es para ver cada uma <span>&rarr;</span></p>
+    <div class="tab-stage" id="tabStage">
+      <div class="demo-window">
+        <div class="demo-bar"><span class="d r"></span><span class="d y"></span><span class="d g"></span><span class="u" id="tabBar">SketchUp + RenderLAB &bull; 360 (tour virtual)</span></div>
+        <video id="tabVideo" src="assets/video/feat-360.mp4" autoplay muted loop playsinline></video>
+      </div>
+      <div class="tab-info">
+        <div class="ti-num" id="tabNum">01 / 06</div>
+        <h3 id="tabTitle">360 (tour virtual) naveg&aacute;vel + link pro cliente</h3>
+        <p id="tabDesc">Gere um <b>360 (tour virtual)</b> do ambiente e um <b>link pra mandar no WhatsApp</b>. O cliente passeia pelo projeto antes dele existir.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRA QUEM É (personas) -->
+<section class="sec" style="padding-top:10px">
+  <div class="ctn">
+    <div class="sec-head">
+      <div class="tag"><span class="dot"></span> Pra quem &eacute;</div>
+      <div class="sec-title">Feito pra quem vive de <span class="hl">projeto.</span></div>
+      <p class="sec-desc">Se voc&ecirc; usa o SketchUp e precisa apresentar imagem de qualidade, essa live &eacute; pra voc&ecirc;:</p>
+    </div>
+    <div class="persona-grid">
+      <div class="persona"><div class="pimg"><img src="assets/img/renders/show-fachada-final.jpg" alt="Arquiteto"><span class="pk">Arquitetos</span></div><div class="pb">Apresente o projeto com render fotorrealista sem terceirizar nem aprender V-Ray.</div></div>
+      <div class="persona"><div class="pimg"><img src="assets/img/renders/show-interno-final.jpg" alt="Designer de interiores"><span class="pk">Designers de interiores</span></div><div class="pb">Mostre materiais, luz e decora&ccedil;&atilde;o de um jeito que o cliente aprova na hora.</div></div>
+      <div class="persona"><div class="pimg"><img src="assets/img/renders/ad-angulo-2.jpg" alt="Artista 3D"><span class="pk">Artistas 3D / Archviz</span></div><div class="pb">Acelere a produ&ccedil;&atilde;o e entregue mais projetos sem render farm nem PC gamer.</div></div>
+      <div class="persona"><div class="pimg"><img src="assets/img/renders/show-comercial-final.jpg" alt="Mercado imobiliário"><span class="pk">Estudantes &amp; iniciantes</span></div><div class="pb">Tenha imagem de portf&oacute;lio de alto n&iacute;vel mesmo come&ccedil;ando agora.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- POR QUE AO VIVO -->
+<section class="sec" style="padding-top:10px">
+  <div class="ctn">
+    <div class="sec-head">
+      <div class="live-badge"><span class="ld"></span> S&oacute; ao vivo</div>
+      <div class="sec-title">O lan&ccedil;amento acontece <span class="hl">na live.</span></div>
+    </div>
+    <div class="why-grid">
+      <div class="why"><div class="n">01</div><h4>Veja desbloqueando</h4><p>Mostro como instalar e ativar a IA dentro do SketchUp, ao vivo.</p></div>
+      <div class="why"><div class="n">02</div><h4>Seu caso na tela</h4><p>Pergunte na hora e veja a IA resolver o seu tipo de projeto.</p></div>
+      <div class="why"><div class="n">03</div><h4>Condi&ccedil;&atilde;o de lan&ccedil;amento</h4><p>A melhor oferta pra come&ccedil;ar liberada s&oacute; durante a live.</p></div>
+      <div class="why"><div class="n">04</div><h4>Saia na frente</h4><p>Use a integra&ccedil;&atilde;o antes do mercado e ganhe tempo j&aacute; no pr&oacute;ximo projeto.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- QUEM APRESENTA -->
+<section class="sec" style="padding-top:10px">
+  <div class="ctn">
+    <div class="host">
+      <div class="host-photo"><img src="assets/img/luiz-montani.jpg" alt="Luiz Montani"></div>
+      <div>
+        <div class="k">Quem apresenta</div>
+        <h3>Luiz Montani</h3>
+        <div class="role">Arquiteto, artista 3D e criador do RenderLAB.</div>
+        <p>Nos &uacute;ltimos anos, transformou visualiza&ccedil;&atilde;o 3D em um neg&oacute;cio combinando renderiza&ccedil;&atilde;o de alto padr&atilde;o com intelig&ecirc;ncia artificial. Acumulou <b>700 mil seguidores</b> e mais de <b>100 milh&otilde;es de visualiza&ccedil;&otilde;es org&acirc;nicas</b>.</p>
+        <p>Criou o <b>RenderLAB</b> &mdash; a plataforma que mudou a forma como arquitetos e designers criam imagens de projeto. Na live, ele mostra a integra&ccedil;&atilde;o com o SketchUp na pr&aacute;tica.</p>
+        <div class="host-stats">
+          <div class="host-stat"><div class="n">700k+</div><div class="d">Seguidores</div></div>
+          <div class="host-stat"><div class="n">100M+</div><div class="d">Visualiza&ccedil;&otilde;es</div></div>
+          <div class="host-stat"><div class="n">2.000+</div><div class="d">Usam o RenderLAB</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="sec" style="padding-top:10px">
+  <div class="ctn">
+    <div class="sec-head"><div class="tag"><span class="dot"></span> D&uacute;vidas</div><div class="sec-title">Antes de garantir sua vaga</div></div>
+    <div class="faq-list">
+      <div class="faq-i"><div class="faq-q">A live &eacute; gratuita? <span class="arr">&#9660;</span></div><div class="faq-a"><p>Sim, 100% gratuita e online. Voc&ecirc; s&oacute; se inscreve pra garantir a vaga e receber o link.</p></div></div>
+      <div class="faq-i"><div class="faq-q">Preciso j&aacute; assinar o RenderLAB? <span class="arr">&#9660;</span></div><div class="faq-a"><p>N&atilde;o. A live &eacute; pra quem j&aacute; usa <b>e</b> pra quem ainda n&atilde;o conhece. Quem n&atilde;o assina entra na condi&ccedil;&atilde;o de lan&ccedil;amento.</p></div></div>
+      <div class="faq-i"><div class="faq-q">Preciso ter o SketchUp instalado? <span class="arr">&#9660;</span></div><div class="faq-a"><p>Pra assistir n&atilde;o precisa de nada. A integra&ccedil;&atilde;o roda dentro do SketchUp &mdash; na live eu mostro como instalar o bot&atilde;o de IA.</p></div></div>
+      <div class="faq-i"><div class="faq-q">Vai ficar gravado? <span class="arr">&#9660;</span></div><div class="faq-a"><p>A condi&ccedil;&atilde;o de lan&ccedil;amento e o tira-d&uacute;vidas s&atilde;o exclusivos do ao vivo. Por isso vale muito estar presente.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- O QUE É O RENDERLAB (movido pro fim) -->
+<section class="sec" id="oque" style="padding-top:10px">
+  <div class="ctn split">
+    <div class="txt">
+      <div class="tag"><span class="dot"></span> Pra fechar</div>
+      <h2>Afinal, o que &eacute; o <span class="hl">RenderLAB?</span></h2>
+      <p>&Eacute; a plataforma de <b>IA feita pra arquitetura</b>: voc&ecirc; envia um print ou seu modelo 3D e recebe <b>render fotorrealista, anima&ccedil;&atilde;o e v&iacute;deo</b> &mdash; sem V-Ray, sem PC gamer, sem escrever prompt.</p>
+      <p>J&aacute; s&atilde;o <b>2.000+ arquitetos e designers</b> usando pra entregar projetos mais r&aacute;pido e impressionar o cliente. E agora ele roda <b>dentro do seu SketchUp</b>.</p>
+      <div class="mini"><span class="chip chip-hot">360 (tour virtual) &amp; v&iacute;deo</span><span class="chip">Render fotorrealista</span><span class="chip">~30 segundos</span><span class="chip">Na nuvem</span></div>
+    </div>
+    <div class="vstage">
+      <video class="vvid" src="assets/video/renderlab1.mp4" autoplay muted loop playsinline></video>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final">
+  <div class="orb orb1"></div><div class="grid-bg"></div>
+  <div class="ctn">
+    <div class="final-card">
+      <div class="live-badge" style="margin-bottom:18px"><span class="ld"></span> Live de lan&ccedil;amento</div>
+      <h2>Desbloqueie a IA <span class="hl">dentro do seu SketchUp.</span></h2>
+      <p>Ao vivo e de gra&ccedil;a, eu te mostro como criar renders realistas sem sair do SketchUp &mdash; com condi&ccedil;&atilde;o especial pra quem aparecer.</p>
+      <button class="btn-neon" onclick="openModal()">Garantir minha vaga &rarr;</button>
+      <div class="mini">Vagas limitadas &bull; inscri&ccedil;&atilde;o gratuita</div>
+    </div>
+    <!-- SUPORTE -->
+    <div class="support">
+      <div class="st">Ficou com alguma d&uacute;vida? <b>Fale com o nosso suporte.</b></div>
+      <a class="btn-ghost" href="https://wa.me/5544997234024?text=Ol%C3%A1!%20Tenho%20uma%20d%C3%BAvida%20sobre%20a%20live%20de%20lan%C3%A7amento%20da%20IA%20no%20SketchUp%20(RenderLAB)." target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="#25D366"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.978-1.045zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+        Falar no WhatsApp
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- MODAL DE INSCRIÇÃO (abre ao clicar nos botões) -->
+<div class="modal" id="modal">
+  <div class="modal-bg" onclick="closeModal()"></div>
+  <div class="modal-card">
+    <button class="modal-x" onclick="closeModal()" aria-label="Fechar">&times;</button>
+    <div id="fcForm">
+      <div class="fc-tag">&#9889; Vaga gratuita na live</div>
+      <div class="fc-h">Quero desbloquear a IA no meu SketchUp</div>
+      <div class="fc-sub">Vagas limitadas pela capacidade da sala ao vivo.</div>
+      <form onsubmit="return submitForm(event)">
+        <div class="field"><label>Nome</label><input type="text" name="nome" placeholder="Seu nome" required></div>
+        <div class="field"><label>E-mail</label><input type="email" name="email" placeholder="seu@email.com" required></div>
+        <div class="field"><label>WhatsApp</label><input type="tel" name="whatsapp" placeholder="(00) 00000-0000" required></div>
+        <button class="btn-neon" type="submit">Garantir minha vaga &rarr;</button>
+      </form>
+      <div class="fc-note"><svg stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Sem spam. Lembretes por e-mail e WhatsApp.</div>
+    </div>
+    <div class="fc-done" id="fcDone">
+      <div class="ic"><svg stroke-width="2.4" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <h4>Vaga garantida!</h4>
+      <p>Voc&ecirc; vai receber os lembretes da live por e-mail e WhatsApp. Te vejo ao vivo.</p>
+    </div>
+  </div>
+</div>
+
+<footer>RenderLAB &mdash; Montani 3D Studio &bull; Live de lan&ccedil;amento &bull; IA dentro do SketchUp</footer>
+
+<script>
+function openModal(){var m=document.getElementById('modal');m.classList.add('open');document.body.style.overflow='hidden';setTimeout(function(){var i=m.querySelector('input');if(i)i.focus()},250);}
+function closeModal(){document.getElementById('modal').classList.remove('open');document.body.style.overflow='';}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+function playHero(){var v=document.getElementById('heroVideo'),o=document.getElementById('hvOverlay');if(!v)return;v.dataset.started='1';v.muted=false;v.loop=false;v.currentTime=0;v.setAttribute('controls','');o.classList.add('hidden');var p=v.play();if(p&&p.then)p.catch(function(){});var fs=v.requestFullscreen||v.webkitRequestFullscreen||v.webkitEnterFullscreen||v.msRequestFullscreen;if(fs){try{fs.call(v);}catch(e){}}}
+document.querySelectorAll('.faq-q').forEach(function(q){q.addEventListener('click',function(){q.parentElement.classList.toggle('open')});});
+// TABS de funcionalidades
+(function(){
+var T=[
+{v:'feat-360',bar:'360 (tour virtual)',n:'01 / 06',t:'360 (tour virtual) navegável + link pro cliente',d:'Gere um <b>360 (tour virtual)</b> do ambiente e um <b>link pra mandar no WhatsApp</b>. O cliente passeia pelo projeto antes dele existir.'},
+{v:'feat-fachada',bar:'print render',n:'02 / 06',t:'Print Render — do modelo ao fotorrealismo',d:'Selecione a cena no SketchUp e gere um render fotorrealista em segundos, direto do seu modelo — <b>sem exportar nada</b>.'},
+{v:'feat-animacao',bar:'animação',n:'03 / 06',t:'Vídeo de cinema, sem editor',d:'Transforme a cena num vídeo com movimento de câmera, pronto pra apresentar — <b>sem software de edição</b>.'},
+{v:'feat-espelho',bar:'reflexo',n:'04 / 06',t:'Reflexo real em vidro e espelho',d:'Clique na face de vidro ou espelho e a IA cria o reflexo realista. O detalhe que vende o projeto, <b>sem trabalho manual</b>.'},
+{v:'feat-edicao',bar:'edição por texto',n:'05 / 06',t:'Edição por texto, na hora',d:'Troque cor, material e detalhes escrevendo em português. Sem refazer a cena — dá pra ajustar <b>na frente do cliente</b>.'},
+{v:'feat-comercial',bar:'comercial',n:'06 / 06',t:'Funciona pro seu tipo de projeto',d:'Externo, interno, comercial, planta humanizada e mais. A IA dá conta do que você entrega no <b>dia a dia</b>.'}
+];
+var btns=document.querySelectorAll('.tab-btn');
+var vid=document.getElementById('tabVideo'),bar=document.getElementById('tabBar'),num=document.getElementById('tabNum'),tit=document.getElementById('tabTitle'),desc=document.getElementById('tabDesc');
+var cur=0;
+function selectTab(i){
+  i=(i+T.length)%T.length; cur=i; var d=T[i];
+  btns.forEach(function(x){x.classList.toggle('active',(+x.dataset.i)===i);});
+  vid.src='assets/video/'+d.v+'.mp4';var p=vid.play();if(p&&p.catch)p.catch(function(){});
+  bar.textContent='SketchUp + RenderLAB • '+d.bar;num.textContent=d.n;tit.innerHTML=d.t;desc.innerHTML=d.d;
+  // realça a aba ativa na barra de rolagem horizontal (mobile)
+  var ab=document.querySelector('.tab-btn.active');if(ab&&ab.scrollIntoView)ab.scrollIntoView({inline:'center',block:'nearest'});
+}
+btns.forEach(function(b){b.addEventListener('click',function(){selectTab(+b.dataset.i);});});
+// ARRASTAR/SWIPE no palco pra trocar de funcionalidade
+var stage=document.querySelector('.tab-stage');
+if(stage){
+  var x0=null,y0=null;
+  stage.addEventListener('touchstart',function(e){x0=e.touches[0].clientX;y0=e.touches[0].clientY;},{passive:true});
+  stage.addEventListener('touchend',function(e){
+    if(x0===null)return;var dx=e.changedTouches[0].clientX-x0,dy=e.changedTouches[0].clientY-y0;x0=null;
+    if(Math.abs(dx)>42&&Math.abs(dx)>Math.abs(dy)){selectTab(cur+(dx<0?1:-1));}
+  },{passive:true});
+  var mx=null;
+  stage.addEventListener('mousedown',function(e){if(e.target.closest('video')&&e.target.id==='heroVideo')return;mx=e.clientX;});
+  window.addEventListener('mouseup',function(e){if(mx===null)return;var dx=e.clientX-mx;mx=null;if(Math.abs(dx)>60){selectTab(cur+(dx<0?1:-1));}});
+}
+})();
+// COUNTDOWN — DATA PLACEHOLDER (trocar pela data real)
+var EVENT=new Date('2026-07-08T20:00:00-03:00');
+(function(){var d=EVENT;var ms=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];document.getElementById('evDate').textContent=d.getDate()+' de '+ms[d.getMonth()];})();
+function tick(){var diff=EVENT-new Date();if(diff<0)diff=0;var s=Math.floor(diff/1000);var p=function(n){return String(n).padStart(2,'0')};document.getElementById('cdD').textContent=p(Math.floor(s/86400));document.getElementById('cdH').textContent=p(Math.floor(s%86400/3600));document.getElementById('cdM').textContent=p(Math.floor(s%3600/60));document.getElementById('cdS').textContent=p(s%60);}
+tick();setInterval(tick,1000);
+// FORM (placeholder — conectar MailerLite [e-mail] + ManyChat [WhatsApp])
+function submitForm(e){e.preventDefault();document.getElementById('fcForm').style.display='none';document.getElementById('fcDone').classList.add('on');return false;}
+
+// AUTOPLAY confiável — toca cada vídeo ao entrar na viewport, pausa ao sair
+// (contorna o adiamento/limite de autoplay do navegador quando há vários vídeos)
+(function(){
+  var vids=document.querySelectorAll('video');
+  // toca; se falhar (vídeo ainda sem dados), tenta de novo quando puder
+  function tryplay(v){
+    var p=v.play();
+    if(p&&p.catch)p.catch(function(){
+      v.addEventListener('canplay',function o(){v.removeEventListener('canplay',o);var q=v.play();if(q&&q.catch)q.catch(function(){});},{once:true});
+    });
+  }
+  if(!('IntersectionObserver' in window)){vids.forEach(tryplay);return;}
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var v=e.target, main=(v.id==='heroVideo');
+      if(e.isIntersecting){
+        if(!main || !v.dataset.started) tryplay(v);
+      } else {
+        // pausa o que saiu da tela (menos o vídeo principal já iniciado pelo usuário)
+        if(!(main && v.dataset.started)){ try{v.pause();}catch(err){} }
+      }
+    });
+  },{threshold:0.01,rootMargin:'200px 0px'}); // toca/bufferiza um pouco antes de entrar na tela
+  vids.forEach(function(v){io.observe(v);});
+})();
+
+// FUNDO — flow field (partículas fluindo num campo de ruído, movimento contínuo)
+(function(){
+  var c=document.getElementById('bgfx'); if(!c||!c.getContext) return;
+  var ctx=c.getContext('2d');
+  var DPR=Math.min(2,window.devicePixelRatio||1), W=0,H=0, parts=[], t=0;
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function seed(){
+    var N=Math.max(120,Math.min(340,Math.round(W*H/6800)));
+    parts=[];
+    for(var i=0;i<N;i++) parts.push({x:Math.random()*W,y:Math.random()*H,k:Math.random()});
+  }
+  function resize(){
+    W=window.innerWidth; H=window.innerHeight;
+    c.width=W*DPR; c.height=H*DPR; c.style.width=W+'px'; c.style.height=H+'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.fillStyle='#05070f'; ctx.fillRect(0,0,W,H);
+    seed();
+  }
+  // ruído barato (soma de senos) -> ângulo do campo
+  function angle(x,y){
+    return (Math.sin(x*0.0015 + t) + Math.cos(y*0.0018 - t*0.8) + Math.sin((x+y)*0.0010 + t*0.6))*1.15;
+  }
+  function frame(){
+    t+=0.0021;
+    // rastro: pinta um véu escuro por cima (apaga aos poucos)
+    ctx.fillStyle='rgba(5,7,15,0.042)'; ctx.fillRect(0,0,W,H);
+    for(var i=0;i<parts.length;i++){
+      var p=parts[i], a=angle(p.x,p.y);
+      var nx=p.x+Math.cos(a)*1.3, ny=p.y+Math.sin(a)*1.3;
+      if(p.k<0.32){ ctx.strokeStyle='rgba(20,80,235,0.22)'; ctx.lineWidth=1.4; }
+      else if(p.k<0.7){ ctx.strokeStyle='rgba(80,150,235,0.15)'; ctx.lineWidth=0.9; }
+      else { ctx.strokeStyle='rgba(150,195,250,0.10)'; ctx.lineWidth=0.7; }
+      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(nx,ny); ctx.stroke();
+      p.x=nx; p.y=ny;
+      if(p.x<-5||p.x>W+5||p.y<-5||p.y>H+5){ p.x=Math.random()*W; p.y=Math.random()*H; }
+    }
+    requestAnimationFrame(frame);
+  }
+  resize();
+  window.addEventListener('resize',function(){clearTimeout(c._rt);c._rt=setTimeout(resize,180);});
+  if(reduce){ // sem animação: um quadro estático suave
+    for(var s=0;s<240;s++) frameStaticStep();
+  } else { requestAnimationFrame(frame); }
+  function frameStaticStep(){ t+=0.02; ctx.fillStyle='rgba(5,7,15,0.05)';ctx.fillRect(0,0,W,H);
+    for(var i=0;i<parts.length;i++){var p=parts[i],a=angle(p.x,p.y);var nx=p.x+Math.cos(a)*1.2,ny=p.y+Math.sin(a)*1.2;ctx.strokeStyle='rgba(90,169,255,0.22)';ctx.lineWidth=0.9;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(nx,ny);ctx.stroke();p.x=nx;p.y=ny;if(p.x<0||p.x>W||p.y<0||p.y>H){p.x=Math.random()*W;p.y=Math.random()*H;}}
+  }
+})();
+</script>
+</body>
+</html>
