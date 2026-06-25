@@ -7,9 +7,20 @@ Página de captação da live de lançamento da funcionalidade **IA dentro do Sk
 **Domínio:** https://iasketchup.montani3d.com.br/
 **Repo:** https://github.com/empreendedorartificial/lp-renderlab-evento-sketchup
 
-Repositório git conectado ao Cloudflare Pages. Build: framework **None**, build command vazio, output `/`. Alteração → `git commit` + `git push` → deploy automático em ~30s.
+Projeto **Cloudflare Workers (Static Assets)** — deploy command `npx wrangler deploy`. Config em `wrangler.toml` (`main = "_worker.js"`, `assets.directory = "./public"`). Alteração → `git commit` + `git push` → deploy automático em ~30s.
 
-> Migrada da Vercel (preview temporário) para o padrão git + Cloudflare Pages em jun/2026.
+> Migrada da Vercel (preview temporário) para git + Cloudflare em jun/2026.
+
+### Variáveis de ambiente (painel Cloudflare → Settings → Environment variables)
+
+| Variável | O que é |
+|---|---|
+| `MAILERLITE_API_KEY` | Token da API do MailerLite (secreta) |
+| `MAILERLITE_GROUP_ID` | Id do grupo onde os inscritos entram |
+| `MANYCHAT_API_TOKEN` | Token da API do ManyChat (secreta) |
+| `MANYCHAT_FLOW_NS` | Namespace do fluxo do ManyChat que envia o template de WhatsApp |
+
+O formulário faz `POST /inscrever` → o worker (`_worker.js`) salva no MailerLite **e** cria o assinante no ManyChat disparando o fluxo (template via API oficial, fora da janela de 24h). Sem as variáveis, o endpoint responde `{ok:false,error:"config"}`.
 
 ## Stack
 
@@ -22,16 +33,19 @@ Repositório git conectado ao Cloudflare Pages. Build: framework **None**, build
 ## Estrutura
 
 ```
-index.html                  — página completa
-assets/
-  video/                    — sizzle-hd3.mp4 (vídeo principal), feat-*.mp4 (funcionalidades),
+_worker.js                  — POST /inscrever (MailerLite + ManyChat) + serve os estáticos
+wrangler.toml               — config do Worker (main + assets.directory=./public)
+public/                     — tudo que a Cloudflare serve como estático
+  index.html                — página completa
+  assets/
+    video/                  — sizzle-hd3.mp4 (principal), feat-*.mp4 (funcionalidades),
                               hero-clip-a/b.mp4 (galeria do hero), renderlab1.mp4 (vertical)
-  img/
-    renders/                — renders limpos usados na galeria e nas personas
-    topics/                 — t1–t6: frames das funcionalidades nos 6 tópicos
-    hero/                   — frames extras
-    logo-renderlab-ai.png, sketchup-white.png, luiz-montani.jpg, sizzle-poster.jpg
-favicon-16/32.png, icon-192.png, apple-touch-icon.png
+    img/
+      renders/              — renders limpos (galeria e personas)
+      topics/               — t1–t6: frames das funcionalidades nos 6 tópicos
+      og-iasketchup.jpg     — card de prévia (1200×630)
+      logo-renderlab-ai.png, sketchup-white.png, luiz-montani.jpg, sizzle-poster.jpg
+  favicon-16/32.png, icon-192.png, apple-touch-icon.png
 ```
 
 ## Prévia de link (Open Graph)
@@ -41,7 +55,7 @@ Card em `assets/img/og-iasketchup.jpg` (1200×630, RenderLAB + SketchUp). Defini
 ## Pendências (não bloqueiam o deploy)
 
 - **Data real do evento** — hoje placeholder `2026-07-08T20:00` no `<script>` (variável `EVENT`).
-- **Integração do formulário** — o modal de inscrição está em placeholder; conectar **MailerLite** (e-mail) + **ManyChat** (WhatsApp).
+- **Variáveis de ambiente** — setar as 4 vars no painel Cloudflare (ver acima) pra o formulário salvar de verdade no MailerLite/ManyChat.
 
 ## Vídeo sizzle
 

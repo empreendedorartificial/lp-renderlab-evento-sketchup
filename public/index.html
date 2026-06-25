@@ -642,12 +642,8 @@ footer{border-top:1px solid var(--border);padding:30px 0;text-align:center;color
     </div>
     <div class="fc-done" id="fcDone">
       <div class="ic"><svg stroke-width="2.4" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
-      <h4>E-mail garantido! Falta 1 passo</h4>
-      <p>Seu lugar j&aacute; est&aacute; salvo por e-mail. Confirme no <b>WhatsApp</b> pra receber o link e os lembretes da live por l&aacute; tamb&eacute;m.</p>
-      <a class="btn-neon" id="waConfirm" href="#" target="_blank" rel="noopener" style="display:inline-flex;justify-content:center;width:100%;margin-top:16px;padding:14px">
-        <svg viewBox="0 0 24 24" fill="#000" style="width:18px;height:18px;margin-right:4px"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.978-1.045z"/></svg>
-        Confirmar no WhatsApp &rarr;
-      </a>
+      <h4>Vaga garantida!</h4>
+      <p>Voc&ecirc; vai receber o link e os lembretes da live por <b>e-mail e WhatsApp</b>. Te vejo ao vivo.</p>
     </div>
   </div>
 </div>
@@ -704,10 +700,7 @@ tick();setInterval(tick,1000);
 // FORM (placeholder — conectar MailerLite [e-mail] + ManyChat [WhatsApp])
 // === INTEGRAÇÃO ===
 // Link de opt-in do WhatsApp (ManyChat). Troque número/texto pelo Ref URL do seu fluxo no ManyChat.
-var WA_OPTIN = "https://wa.me/5544997234024?text=" + encodeURIComponent("Quero garantir minha vaga na live — IA dentro do SketchUp");
-
 function formDone(){
-  var wa=document.getElementById('waConfirm'); if(wa) wa.href=WA_OPTIN;
   document.getElementById('fcForm').style.display='none';
   document.getElementById('fcDone').classList.add('on');
 }

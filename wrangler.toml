@@ -1,0 +1,9 @@
+# Cloudflare Workers (Static Assets) — deploy via `npx wrangler deploy`
+# Estáticos da página ficam em ./public ; o worker (_worker.js) trata POST /inscrever.
+name = "lp-renderlab-evento-sketchup"
+main = "_worker.js"
+compatibility_date = "2026-06-25"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
