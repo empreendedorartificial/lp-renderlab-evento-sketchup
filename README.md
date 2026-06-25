@@ -4,7 +4,7 @@ Página de captação da live de lançamento da funcionalidade **IA dentro do Sk
 
 ## Deploy
 
-**Domínio:** a definir no Cloudflare Pages (sugestão: `iasketchup.montani3d.com.br`)
+**Domínio:** https://iasketchup.montani3d.com.br/
 **Repo:** https://github.com/empreendedorartificial/lp-renderlab-evento-sketchup
 
 Repositório git conectado ao Cloudflare Pages. Build: framework **None**, build command vazio, output `/`. Alteração → `git commit` + `git push` → deploy automático em ~30s.
@@ -34,11 +34,14 @@ assets/
 favicon-16/32.png, icon-192.png, apple-touch-icon.png
 ```
 
+## Prévia de link (Open Graph)
+
+Card em `assets/img/og-iasketchup.jpg` (1200×630, RenderLAB + SketchUp). Definido nas meta `og:image`/`twitter:image` do `<head>` com URL absoluta do domínio. Após publicar, rodar o [Sharing Debugger da Meta](https://developers.facebook.com/tools/debug/) ("Scrape Again") pra limpar o cache da prévia.
+
 ## Pendências (não bloqueiam o deploy)
 
 - **Data real do evento** — hoje placeholder `2026-07-08T20:00` no `<script>` (variável `EVENT`).
 - **Integração do formulário** — o modal de inscrição está em placeholder; conectar **MailerLite** (e-mail) + **ManyChat** (WhatsApp).
-- **Card Open Graph** — adicionar `og:image`/`twitter:image` (1200×630) no `<head>` para a prévia de link.
 
 ## Vídeo sizzle
 
