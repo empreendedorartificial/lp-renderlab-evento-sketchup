@@ -693,7 +693,7 @@ if(stage){
 }
 })();
 // COUNTDOWN — DATA PLACEHOLDER (trocar pela data real)
-var EVENT=new Date('2026-07-08T20:00:00-03:00');
+var EVENT=new Date('2026-07-13T20:00:00-03:00');
 (function(){var d=EVENT;var ms=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];document.getElementById('evDate').textContent=d.getDate()+' de '+ms[d.getMonth()];})();
 function tick(){var diff=EVENT-new Date();if(diff<0)diff=0;var s=Math.floor(diff/1000);var p=function(n){return String(n).padStart(2,'0')};document.getElementById('cdD').textContent=p(Math.floor(s/86400));document.getElementById('cdH').textContent=p(Math.floor(s%86400/3600));document.getElementById('cdM').textContent=p(Math.floor(s%3600/60));document.getElementById('cdS').textContent=p(s%60);}
 tick();setInterval(tick,1000);
