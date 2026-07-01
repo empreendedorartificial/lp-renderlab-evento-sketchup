@@ -58,7 +58,8 @@ Card em `assets/img/og-iasketchup.jpg` (1200×630, RenderLAB + SketchUp). Defini
 - **Integração MailerLite + ManyChat LIGADA (18/06/2026)** — via `wrangler secret`:
   - `MAILERLITE_API_KEY` ✓ · `MAILERLITE_GROUP_ID` = `191751794033952502` (grupo "Leads - Lançamento sketchup") ✓ · `MANYCHAT_API_TOKEN` ✓ (página Montani3d Studio)
   - Testado ponta a ponta: lead cai no grupo do MailerLite (teste feito e apagado).
-  - **Falta `MANYCHAT_FLOW_NS`** — o namespace do Flow do ManyChat que dispara o template de WhatsApp. Sem ele, o lead é criado no ManyChat mas o template não dispara. Setar com `npx wrangler secret put MANYCHAT_FLOW_NS` quando o Flow existir.
+  - `MANYCHAT_FLOW_NS` = `content20260701012019_083117` (Flow **"[L - Sketchup] Boas-vindas - Captação"**) ✓ — integração 100% ligada.
+  - O worker chama a API do ManyChat direto: `createSubscriber` (WhatsApp) + `sendFlow` (esse ns). **Não usa gatilho/automação** do ManyChat. Contatos são identificados por telefone (não e-mail).
   - Deploy é `npx wrangler deploy`; secrets são setadas com `npx wrangler secret put NOME` (de dentro desta pasta).
 
 ## Vídeo sizzle
