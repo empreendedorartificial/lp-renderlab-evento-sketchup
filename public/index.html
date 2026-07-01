@@ -701,8 +701,7 @@ tick();setInterval(tick,1000);
 // === INTEGRAÇÃO ===
 // Link de opt-in do WhatsApp (ManyChat). Troque número/texto pelo Ref URL do seu fluxo no ManyChat.
 function formDone(){
-  document.getElementById('fcForm').style.display='none';
-  document.getElementById('fcDone').classList.add('on');
+  window.location.href='/confirmado';
 }
 function submitForm(e){
   e.preventDefault();
