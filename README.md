@@ -54,7 +54,7 @@ Card em `assets/img/og-iasketchup.jpg` (1200×630, RenderLAB + SketchUp). Defini
 
 ## Pendências (não bloqueiam o deploy)
 
-- **Data real do evento** — hoje placeholder `2026-07-08T20:00` no `<script>` (variável `EVENT`).
+- **Data do evento confirmada: 13/07/2026 às 20h** (variável `EVENT` no `<script>` já está `2026-07-13T20:00:00-03:00`).
 - **Integração MailerLite + ManyChat LIGADA (18/06/2026)** — via `wrangler secret`:
   - `MAILERLITE_API_KEY` ✓ · `MAILERLITE_GROUP_ID` = `191751794033952502` (grupo "Leads - Lançamento sketchup") ✓ · `MANYCHAT_API_TOKEN` ✓ (página Montani3d Studio)
   - Testado ponta a ponta: lead cai no grupo do MailerLite (teste feito e apagado).
