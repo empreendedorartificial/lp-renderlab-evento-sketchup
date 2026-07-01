@@ -55,7 +55,11 @@ Card em `assets/img/og-iasketchup.jpg` (1200×630, RenderLAB + SketchUp). Defini
 ## Pendências (não bloqueiam o deploy)
 
 - **Data real do evento** — hoje placeholder `2026-07-08T20:00` no `<script>` (variável `EVENT`).
-- **Variáveis de ambiente** — setar as 4 vars no painel Cloudflare (ver acima) pra o formulário salvar de verdade no MailerLite/ManyChat.
+- **Integração MailerLite + ManyChat LIGADA (18/06/2026)** — via `wrangler secret`:
+  - `MAILERLITE_API_KEY` ✓ · `MAILERLITE_GROUP_ID` = `191751794033952502` (grupo "Leads - Lançamento sketchup") ✓ · `MANYCHAT_API_TOKEN` ✓ (página Montani3d Studio)
+  - Testado ponta a ponta: lead cai no grupo do MailerLite (teste feito e apagado).
+  - **Falta `MANYCHAT_FLOW_NS`** — o namespace do Flow do ManyChat que dispara o template de WhatsApp. Sem ele, o lead é criado no ManyChat mas o template não dispara. Setar com `npx wrangler secret put MANYCHAT_FLOW_NS` quando o Flow existir.
+  - Deploy é `npx wrangler deploy`; secrets são setadas com `npx wrangler secret put NOME` (de dentro desta pasta).
 
 ## Vídeo sizzle
 
