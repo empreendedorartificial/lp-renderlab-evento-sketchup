@@ -41,8 +41,14 @@ async function handleInscrever(request, env) {
   const phone = normPhone(data.whatsapp);
   if (!email || email.indexOf("@") < 1) return json({ ok: false, error: "email" }, 400);
 
+  // Origem do lead (UTMs capturados pela página) -> string compacta pro MailerLite
+  const u = (data.utm && typeof data.utm === "object") ? data.utm : {};
+  const lim = (v) => String(v || "").slice(0, 100);
+  const origem = [lim(u.utm_campaign), lim(u.utm_content), lim(u.utm_term)].filter(Boolean).join(" | ").slice(0, 250)
+    || lim(u.src) || lim(u.utm_source) || "";
+
   // 1) MailerLite (e-mail) — precisa dar certo
-  const ml = await mailerlite(env, { email, nome, phone });
+  const ml = await mailerlite(env, { email, nome, phone, origem });
   if (!ml.ok) return json({ ok: false, error: "mailerlite", detail: ml.detail }, 502);
 
   // 2) ManyChat (WhatsApp) — best-effort; não derruba a inscrição se falhar
@@ -51,9 +57,26 @@ async function handleInscrever(request, env) {
   return json({ ok: true, mailerlite: true, whatsapp: mc.ok });
 }
 
-async function mailerlite(env, { email, nome, phone }) {
+// Garante que o campo custom "origem" existe na conta (cache no isolate; criar é idempotente).
+let ORIGEM_FIELD_OK = false;
+async function mlGarantirCampoOrigem(env) {
+  if (ORIGEM_FIELD_OK) return;
+  const h = { Authorization: `Bearer ${env.MAILERLITE_API_KEY}`, "Content-Type": "application/json", Accept: "application/json" };
+  try {
+    const r = await fetch("https://connect.mailerlite.com/api/fields?filter[keyword]=origem", { headers: h });
+    const d = await r.json().catch(() => ({}));
+    if (!(d.data || []).some((f) => f.key === "origem" || f.name === "origem")) {
+      await fetch("https://connect.mailerlite.com/api/fields", { method: "POST", headers: h, body: JSON.stringify({ name: "origem", type: "text" }) });
+    }
+    ORIGEM_FIELD_OK = true;
+  } catch (_) {}
+}
+
+async function mailerlite(env, { email, nome, phone, origem }) {
   if (!env.MAILERLITE_API_KEY) return { ok: false, detail: "sem MAILERLITE_API_KEY" };
-  const body = { email, fields: { name: nome, phone } };
+  const fields = { name: nome, phone };
+  if (origem) { await mlGarantirCampoOrigem(env); fields.origem = origem; }
+  const body = { email, fields };
   if (env.MAILERLITE_GROUP_ID) body.groups = [String(env.MAILERLITE_GROUP_ID)];
   try {
     const r = await fetch("https://connect.mailerlite.com/api/subscribers", {

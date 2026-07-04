@@ -731,10 +731,20 @@ tick();setInterval(tick,1000);
 function formDone(){
   window.location.href='/confirmado';
 }
+// Origem do lead (UTMs dos anúncios) — capturada no load, persiste na sessão e vai junto na inscrição
+var UTM=(function(){
+  var s={}; try{s=JSON.parse(sessionStorage.getItem('mnt_utm')||'{}')}catch(e){}
+  var q=new URLSearchParams(location.search);
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','src','sck'].forEach(function(k){
+    var v=q.get(k); if(v)s[k]=v.slice(0,100);
+  });
+  try{sessionStorage.setItem('mnt_utm',JSON.stringify(s))}catch(e){}
+  return s;
+})();
 function submitForm(e){
   e.preventDefault();
   var f=e.target, btn=f.querySelector('button[type="submit"]'), orig=btn.innerHTML;
-  var payload={ nome:(f.nome.value||'').trim(), email:(f.email.value||'').trim(), whatsapp:(f.whatsapp.value||'').trim() };
+  var payload={ nome:(f.nome.value||'').trim(), email:(f.email.value||'').trim(), whatsapp:(f.whatsapp.value||'').trim(), utm:UTM };
   btn.disabled=true; btn.innerHTML='Enviando…';
   fetch('/inscrever',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     .then(function(r){return r.json().catch(function(){return {ok:false};});})
