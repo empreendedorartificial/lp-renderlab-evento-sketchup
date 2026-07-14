@@ -110,8 +110,18 @@ async function manychat(env, { phone, nome }) {
       body: JSON.stringify({ whatsapp_phone: phone, first_name: nome || undefined }),
     });
     const cj = await cr.json().catch(() => ({}));
-    const sid = cj && cj.data && cj.data.id;
-    if (!sid) return { ok: false, step: "create", detail: JSON.stringify(cj).slice(0, 200) };
+    let sid = cj && cj.data && cj.data.id;
+    if (!sid) {
+      // contato já existe no ManyChat — o erro traz o wa_id; busca com e sem "+"
+      const waid = (JSON.stringify(cj).match(/(\d{10,15})/) || [])[1] || phone;
+      for (const cand of ["+" + waid, waid]) {
+        const fr2 = await fetch("https://api.manychat.com/fb/subscriber/findBySystemField?phone=" + encodeURIComponent(cand), { headers });
+        const fj = await fr2.json().catch(() => ({}));
+        sid = fj && fj.data && fj.data.id;
+        if (sid) break;
+      }
+      if (!sid) return { ok: false, step: "create+find", detail: JSON.stringify(cj).slice(0, 200) };
+    }
 
     // dispara o fluxo (template) — fora da janela de 24h via API oficial
     if (env.MANYCHAT_FLOW_NS) {
