@@ -481,8 +481,14 @@ src="https://www.facebook.com/tr?id=2428536680685666&ev=PageView&noscript=1"
     </div>
     <div class="demo-window">
       <div class="demo-bar"><span class="d r"></span><span class="d y"></span><span class="d g"></span><span class="u">SketchUp + RenderLAB &bull; v&iacute;deo da integra&ccedil;&atilde;o</span></div>
-      <div class="hero-video" id="heroPlayer" style="border:0;border-radius:0;box-shadow:none;cursor:default">
-        <iframe src="https://www.youtube.com/embed/kHdQx1jBIDo?rel=0" title="IA no SketchUp &mdash; RenderLAB" style="width:100%;aspect-ratio:16/9;display:block;border:0;background:#000" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+      <div class="hero-video" id="heroPlayer" style="border:0;border-radius:0;box-shadow:none">
+        <video id="heroVideo" src="assets/video/sizzle-hd3.mp4" autoplay muted loop playsinline preload="auto" poster="assets/img/sizzle-poster.jpg"></video>
+        <div class="cobrand"><img class="cb-rl" src="assets/img/logo-renderlab-ai.png" alt="RenderLAB AI"><span>+</span><img class="cb-sk" src="assets/img/sketchup-white.png" alt="SketchUp"></div>
+        <div class="hv-overlay" id="hvOverlay" onclick="playHero()">
+          <div class="hv-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          <div class="hv-text">Clique e veja a revolu&ccedil;&atilde;o da <b>IA no SketchUp</b></div>
+          <div class="hv-sub">&#9654; com som &middot; em tela cheia</div>
+        </div>
       </div>
     </div>
     <p class="demo-cap">V&iacute;deo da integra&ccedil;&atilde;o rodando dentro do SketchUp &mdash; com &aacute;udio. Clique pra assistir.</p>
